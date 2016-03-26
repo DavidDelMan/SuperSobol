@@ -1,0 +1,10 @@
+#include "SuperSobolIndices.h"
+
+/* Ctor
+ * Input:
+ *
+ *  * model_ = Type-valued function of a vector of Types.  First arg is
+ *   vector of parameters to be drawn randomly.  Second arg is vector
+ *   of fixed constants, like strike & interest rate.
+ * constants_ = vector of constants for model, like strike price
+ * indices_ = set of parameter indices to compute SIs for

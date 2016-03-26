@@ -1,0 +1,8 @@
+#ifndef SUPERSOBOLINDICES_H
+#define SUPERSOBOLINDICES_H
+
+class SuperSobolIndices
+{
+
+};
+#endif

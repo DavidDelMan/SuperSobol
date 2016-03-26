@@ -1,0 +1,50 @@
+#include "SobolIndices.h"
+#include <cmath>
+#include <fstream>
+#include <thread>  // std::this_thread::sleep_for
+#include <chrono>  // std::chrono::seconds
+#include <ctime>
+
+/* Practice linear model, parameters.size() = 4 */
+Type LinearModel(const std::vector<Type> &parameters,
+		 const std::vector<Type> &constants)
+{
+  Type Y = 0;
+  Type c = 0.1;
+  for (int i = 0; i < 4; ++i)
+    {
+      Y += c*parameters[i];
+    }
+  return Y;
+}
+
+void DisplayVector(const std::vector<std::vector<Type> >& vec)
+{
+  for (const auto& i : vec)
+    {
+      for (const auto& j : i)
+	{
+	  std::cout << j << " ";
+	}
+      std::cout << "\n";
+    }
+  std::cout << "\n";
+}
+
+void DisplayVector(const std::vector<Type>& vec)
+{
+  for (auto& i : vec)
+    {
+      std::cout << i << " ";
+    }
+  std::cout << "\n\n";
+}
+
+void DisplaySet(const std::set<int>& s)
+{
+  for (auto i : s)
+    {
+      std::cout << i << " ";
+    }
+  std::cout << "\n\n";
+}
