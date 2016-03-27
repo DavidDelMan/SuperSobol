@@ -40,17 +40,22 @@ class SobolIndices
 
  public:
   SobolIndices(Type (*model_)(const std::vector<Type>&,
-				     const std::vector<Type>&),
-		      const std::vector<Type> &constants_,
-		      const std::set<int> &indices_,
-		      int dim_,
-		      unsigned int N_MC_,
-		      Type CoV_ = 1.0);
+			      const std::vector<Type>&),
+	       const std::vector<Type> &constants_,
+	       const std::set<int> &indices_,
+	       const std::vector<std::vector<Type> >
+	       &initialDistroParams_,
+	       int dim_,
+	       unsigned int N_MC_,
+	       Type CoV_ = 1.0);
   void DisplayMembers();
-  void ComputeSensitivityIndices(const std::set<int>& indices_
+  Type ComputeSensitivityIndices(const std::vector<Type> 
+				 &uncertainties,
+				 const std::set<int> &indices_
 				 = std::set<int>());
   void AssignModelArguments(const std::set<int>& indices_);
-  void TransformToModelDomain();
+  void TransformToModelDomain(const std::vector<Type> &uncertainties
+			      = std::vector<Type>());
   std::vector<std::vector<Type> >
     PlotCoV(const std::vector<Type> &CoV_Vector, 
 	    std::string &filename);
@@ -60,8 +65,8 @@ class SobolIndices
   void DisplayVector(const std::vector<std::vector<Type> >& vec);
   Type GetLowerIndex() {return lowerIndex;}
   Type GetTotalIndex() {return totalIndex;}
-  void SetDistroParams(const std::vector<std::vector<Type> >&
-		       distroParams_);
+  /* void SetDistroParams(const std::vector<std::vector<Type> >& */
+  /* 		       distroParams_); */
   ~SobolIndices()
     {
       delete randomNumberGenerator;
