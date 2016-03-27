@@ -16,12 +16,14 @@
  */
 SobolIndices::
 SobolIndices(Type (*model_)(const std::vector<Type>&,
-				const std::vector<Type>&),
-		 const std::vector<Type> &constants_,
-		 const std::set<int> &indices_,
-		 int dim_,
-		 unsigned int N_MC_,
-		 Type CoV_)
+			    const std::vector<Type>&),
+	     const std::vector<Type> &constants_,
+	     const std::set<int> &indices_,
+	     const std::vector<std::vector<Type> >
+	     &initialDistroParams_,
+	     int dim_,
+	     unsigned int N_MC_,
+	     Type CoV_)
 {
   model = model_;
   constants = constants_;
@@ -85,13 +87,15 @@ void SobolIndices::DisplayMembers()
  * passed into ctor, as need in CoV routine.
  *
  * Input:
+ *   uncertainties = vector of parameter variances to use
  *   indices - set of parameters to compute sensitivity index for,
  *             defaulted to empty in header
  */
-void SobolIndices::
-ComputeSensitivityIndices(const std::set<int>& indices_)
+Type SobolIndices::
+ComputeSensitivityIndices(const std::vector<Type> &uncertainties,
+			  const std::set<int> &indices_)
 {
-  std::cout << "Computing SIs, CoV \n";
+  // std::cout << "Computing SIs, CoV \n";
 
   /* MC accumulators */
   Type f0_sum = 0, Dy_sum = 0, DT_sum = 0, D_sum = 0;
@@ -105,7 +109,7 @@ ComputeSensitivityIndices(const std::set<int>& indices_)
       randomNumberGenerator->genHalton();
 
       /* transform each random number to its distro. */
-      TransformToModelDomain();
+      TransformToModelDomain(uncertainties);
 
       /* assign xformed random numbers to proper model arg vectors */
       if (indices_.empty())
@@ -147,8 +151,8 @@ ComputeSensitivityIndices(const std::set<int>& indices_)
   Type Dy = Dy_sum/N_MC;
   Type DT = DT_sum/N_MC;
 
-  std::cout << "Dy = " << Dy << "\n";
-  std::cout << "DT = " << DT << "\n";
+  // std::cout << "Dy = " << Dy << "\n";
+  // std::cout << "DT = " << DT << "\n";
 
   //  /* normalized */
   // lowerIndex = Dy/modelVariance;
@@ -157,6 +161,8 @@ ComputeSensitivityIndices(const std::set<int>& indices_)
   /* non-normalized */
   lowerIndex = Dy;
   totalIndex = DT/2.0;
+
+  return totalIndex;
 
 }
 
@@ -189,9 +195,14 @@ AssignModelArguments(const std::set<int>& indices_)
  * computation of the SIs) to fit in the model domain.  I.e., it takes
  * each arg vector, which is composed of Unif(0,1) random numbers, and
  * transforms each component to its respective distro.
+ *
+ * Input:
+ *    (optional) uncertainties = vector of parameter uncertainties,
+ *        defaulted to empty in header.  This is for use with Super
+ *        Sobol index computation.
  */
 void SobolIndices::
-TransformToModelDomain()
+TransformToModelDomain(const std::vector<Type> &uncertainties)
 {
   for (int j = 0; j < dim; ++j)
     {
@@ -205,7 +216,18 @@ TransformToModelDomain()
       /* true if "j" is in ORIGINAL index set */
       bool inIndexSet = indices.count(j+1);
 
-      Type mean = distroParams[j][0], var = distroParams[j][1];
+      Type mean = distroParams[j][0], var;
+
+      /* If parameter uncertainty not changed, leave as initial. Ow
+       * change to new uncertainty. */
+      if (uncertainties.empty())
+	{
+	  var = distroParams[j][1];
+	}
+      else
+	{
+	  var = uncertainties[j];
+	}
 
       /* change variance of parameter of interest by CoV.
        // * Also need to check the the index set being passed in is the
@@ -249,68 +271,68 @@ PlotCoV(const std::vector<Type> &CoV_Vector,
 {
   std::cout << "PlotCoV \n";
 
-  /* allocate Sobol index vectors */
-  size_t num_CoV = CoV_Vector.size();
-  std::vector<std::vector<Type> > 
-    results(3, std::vector<Type>(num_CoV));
+  // /* allocate Sobol index vectors */
+  // size_t num_CoV = CoV_Vector.size();
+  // std::vector<std::vector<Type> > 
+  //   results(3, std::vector<Type>(num_CoV));
 
-  /* construct set containing complement of current param index */
-  std::set<int> complement_indices;
-  for (int i = 0; i < dim; ++i)
-    {
-      /* true if "i" is in index set */
-      bool inIndexSet = indices.count(i+1);
+  // /* construct set containing complement of current param index */
+  // std::set<int> complement_indices;
+  // for (int i = 0; i < dim; ++i)
+  //   {
+  //     /* true if "i" is in index set */
+  //     bool inIndexSet = indices.count(i+1);
 
-      /* add index to complement set if not in original index set */
-      if (!inIndexSet)
-	{
-	  complement_indices.insert(i+1);
-	}
-    }
+  //     /* add index to complement set if not in original index set */
+  //     if (!inIndexSet)
+  // 	{
+  // 	  complement_indices.insert(i+1);
+  // 	}
+  //   }
 
-  /* compute sensitivity indices */
-  for (int i = 0; i < num_CoV; ++i)
-    {
-      /* change the class' CoV to the current one in the vector */
-      CoV = CoV_Vector[i];
+  // /* compute sensitivity indices */
+  // for (int i = 0; i < num_CoV; ++i)
+  //   {
+  //     /* change the class' CoV to the current one in the vector */
+  //     CoV = CoV_Vector[i];
 
-      /* compute the sobol indices for original index using this CoV */
-      ComputeSensitivityIndices();
+  //     /* compute the sobol indices for original index using this CoV */
+  //     ComputeSensitivityIndices();
 
-      /* store total index of original set in index vector */
-      results[0][i] = totalIndex;
+  //     /* store total index of original set in index vector */
+  //     results[0][i] = totalIndex;
 
-      /* compute sobol indices for complement set */
-      ComputeSensitivityIndices(complement_indices);
+  //     /* compute sobol indices for complement set */
+  //     ComputeSensitivityIndices(complement_indices);
 
-      /* store lower index of complement set in index vector */
-      results[1][i] = lowerIndex;
+  //     /* store lower index of complement set in index vector */
+  //     results[1][i] = lowerIndex;
 
-      /* store model variance */
-      results[2][i] = modelVariance;
-    }
+  //     /* store model variance */
+  //     results[2][i] = modelVariance;
+  //   }
 
-  /* open plotting file and write data to it */
-  std::ofstream plotFile(filename.c_str());
-  if (plotFile.is_open())
-    {
-      for (int i = 0; i < num_CoV; ++i)
-	{
-	  plotFile << CoV_Vector[i] << " " << results[0][i] << " " 
-		   << results[1][i] << " " << " " 
-		   << results[2][i] << "\n";
-	}
-    }
-  else
-    {
-      std::cout << "unable to open plot file \n";
-    }
+  // /* open plotting file and write data to it */
+  // std::ofstream plotFile(filename.c_str());
+  // if (plotFile.is_open())
+  //   {
+  //     for (int i = 0; i < num_CoV; ++i)
+  // 	{
+  // 	  plotFile << CoV_Vector[i] << " " << results[0][i] << " " 
+  // 		   << results[1][i] << " " << " " 
+  // 		   << results[2][i] << "\n";
+  // 	}
+  //   }
+  // else
+  //   {
+  //     std::cout << "unable to open plot file \n";
+  //   }
 
-  /* close plotting file */
-  plotFile.close();
+  // /* close plotting file */
+  // plotFile.close();
 
-  /* return Sobol indices */
-  return results;
+  // /* return Sobol indices */
+  // return results;
 }
 
 void SobolIndices::DisplayVector(const std::vector<Type>& vec)
@@ -345,11 +367,11 @@ DisplayVector(const std::vector<std::vector<Type> >& vec)
   std::cout << "\n";
 }
 
-/* Allows the parameters distributions to be changed from those passed
- * into the ctor.  Written for Super Sobol indices routines. */
-SobolIndices::
-void SetDistroParams(const std::vector<std::vector<Type> >&
-		     distroParams_)
-{
-  distroParams = distroParams_;
-}
+// /* Allows the parameters distributions to be changed from those passed
+//  * into the ctor.  Written for Super Sobol indices routines. */
+// SobolIndices::
+// void SetDistroParams(const std::vector<std::vector<Type> >&
+// 		     distroParams_)
+// {
+//   distroParams = distroParams_;
+// }

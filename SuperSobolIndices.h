@@ -1,6 +1,8 @@
 #ifndef SUPERSOBOLINDICES_H
 #define SUPERSOBOLINDICES_H
 
+#include "SobolIndices.h"
+
 typedef double Type;
 
 class SuperSobolIndices
@@ -9,18 +11,19 @@ class SuperSobolIndices
   SobolIndices *sobol;  // sobol indices object; computes S's
   halton *RNG;  // random number generator = RASRAP
   InverseTransformation *invTrans;  // inverse transformation object
-  Type (*model)(const std::vector<Type>&,
-		const std::vector<Type>&);  // model
+  /* Type (*model)(const std::vector<Type>&, */
+  /* 		const std::vector<Type>&);  // model */
 
   // distribution of parameter uncertainties
   std::vector<std::vector<Type> > paramUncertaintyDistroParams;
 
   // number of MC runs to compute Super Sobol indices
   unsigned int N_Super_Sobol;
-  unsigned int N_MC;  // number of MC runs to compute Sobol indices
+  int dim;  // number of parameters in model
   std::set<int> indices;  // index set to compute Super Sobol index of
-  std::vector<Type> constants;  // model constants, if needed
+  /* std::vector<Type> constants;  // model constants, if needed */
   Type lowerSuperIndex, totalSuperIndex;  // Super Sobol indices
+  Type superModelMean, superModelVariance;  // super model mean & var
 
   /* Each element contains the uncertainty for the corresponding
    * parameter on a given run.  E.g. assume a four-parameter model with
@@ -43,22 +46,28 @@ class SuperSobolIndices
  public:
   SuperSobolIndices(Type (*model_)(const std::vector<Type>&, 
 				   const std::vector<Type>&),
-		    const std::vector<Type>& constants_,
-		    const std::set<int>& indices_,
-		    const std::vector<std::vector<Type> >& 
-		    paramUncertaintyDistroParams_,
+		    const std::vector<Type> &constants_,
+		    const std::set<int> &indices_,
+		    const std::vector<std::vector<Type> >
+		    &initialDistroParams_,
+		    const std::vector<std::vector<Type> > 
+		    &paramUncertaintyDistroParams_,
 		    const unsigned int dim_,
 		    const unsigned int N_MC_,
 		    const unsigned int N_Super_Sobol_);
   void ComputeSuperSobolIndices();
   void TransformToParamUncertaintyDomain();
+  void AssignUncertaintyModelArguments();
 
+  /* void ChangeParameterUncertainty(); */
+  void DisplayVector(const std::vector<std::vector<Type> > &vec);
+  void DisplayMembers();
+  void DisplaySet(const std::set<int> &s);
   ~SuperSobolIndices()
     {
       delete RNG;
-      delete InvTrans;
+      delete invTrans;
       delete sobol;
     }
-
 };
 #endif
